@@ -25,38 +25,50 @@ pip install build-filesystem-trie
 Suppose the file layout is:
 
 ```
-testdir/
-  file1.txt
-  subdir/
-    file2.txt
+- testdir/
+  - file1.txt
+  - subdir/
+    - file2.txt
 ```
 
-Calling
+Running
 
 ```python
-from build_filesystem_trie import build_filesystem_trie
+from build_filesystem_trie import build_filesystem_trie, iterate_relative_path_components_is_dir_tuples
 
 prefix, trie = build_filesystem_trie('testdir')
+
+for relative_path_components, is_dir in iterate_relative_path_components_is_dir_tuples(trie):
+    print(
+        '%s- %s%s' % (
+            '  ' * (len(relative_path_components) - 1),
+            relative_path_components[-1],
+            '/' if is_dir else '',
+        )
+    )
 ```
 
-- `prefix` will contain the absolute path components of the directory containing `testdir`.
-- `trie` will be a TrieNode named `testdir`, with `is_end == False` and children `file1.txt` and `subdir`, and so on,
-  representing the full directory structure under `testdir`.
+prints:
+
+```
+- testdir/
+  - file1.txt
+  - subdir/
+    - file2.txt
+```
+
+- `prefix` will contain the absolute path components of **the directory containing `testdir`**.
+- `trie` will be a `TrieNode` named `testdir`, with `is_end == False` and children `TrieNode`s named `file1.txt` and `subdir`, representing the full directory structure under `testdir`.
 
 > By default, skips dotted (hidden) files and directories in a directory.
 > 
 > To recurse dotted (hidden) files and directories in a directory, pass the argument `recurse_dotted=True`
 
-Calling
+- `relative_path_components` will contain the relative path components of a file or directory, **relative to the directory containing `testdir`**.
+  - It is possible to use `os.path.join(*prefix, *relative_path_components)` to obtain the absolute path of the file or directory.
+- `is_dir` is `False` for files and `True` for directories.
 
-```python
-from build_filesystem_trie import build_filesystem_trie
-
-prefix, trie = build_filesystem_trie('testdir/file1.txt')
-```
-
-- `prefix` will contain the absolute path components of the directory containing `testdir/file1.txt`.
-- `trie` will be a TrieNode named `file1.txt`, with `is_end == True`.
+This is analogous to the output of the UNIX `tree` command.
 
 ## Contributing
 

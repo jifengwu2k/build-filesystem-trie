@@ -6,7 +6,7 @@ from os.path import exists, isdir, join, split
 from cowlist import COWList
 from fspathverbs import Root, Parent, Current, Child, compile_to_fspathverbs
 from tinytrie import TrieNode
-from typing import Tuple
+from typing import Iterable, Tuple
 
 if sys.version_info < (3,):
     FileNotFoundError = IOError
@@ -28,9 +28,6 @@ def build_filesystem_trie(
         Tuple[COWList[str], TrieNode[str, str]]:
             - prefix (COWList[str]): The absolute path components of the directory containing the file or directory.
             - trie (TrieNode): The trie rooted at the specified path, whether that path points to a file or a directory.
-
-    Example:
-        prefix, trie = extract_prefix_and_build_filesystem_trie_from_path('some/directory/or/file')
     """
     if not exists(path):
         raise FileNotFoundError(errno.ENOENT, 'No such file or directory: %s' % (path,))
@@ -73,3 +70,37 @@ def build_filesystem_trie(
         return root
 
     return absolute_path_components[:-1], build_filesystem_trie_from_absolute_path_components(absolute_path_components)
+
+
+def iterate_relative_path_components_is_dir_tuples(
+        filesystem_trie_node,  # type: TrieNode[str, str]
+        accumulated_relative_path_components=COWList(),  # type: COWList[str]
+):
+    # type: (...) -> Iterable[Tuple[COWList[str], bool]]
+    """
+    Recursively yields (relative_path_components, is_dir) tuples for each node in a filesystem trie.
+
+    Args:
+        filesystem_trie_node (TrieNode): Root node of the filesystem trie.
+        accumulated_relative_path_components (COWList[str], optional): The accumulated relative path components to the current node (excluding the current node).
+
+    Yields:
+        Tuple[COWList[str], bool]:
+            - relative_path_components: The path components from the trie root to the current node (relative to the prefix returned by build_filesystem_trie).
+            - is_dir: False if the node represents a file; True if it represents a directory.
+
+    Example:
+        for relative_path_components, is_dir in iterate_relative_path_components_is_dir_tuples(trie):
+            print("Is dir:", is_dir, "Components:", list(relative_path_components))
+    """
+    name = filesystem_trie_node.value
+    is_file = filesystem_trie_node.is_end
+
+    relative_path_components = accumulated_relative_path_components.append(name)
+    yield relative_path_components, not is_file
+    for child_filesystem_trie_node in filesystem_trie_node.children.values():
+        for child_relative_path_components, child_is_dir in iterate_relative_path_components_is_dir_tuples(
+                filesystem_trie_node=child_filesystem_trie_node,
+                accumulated_relative_path_components=relative_path_components,
+        ):
+            yield child_relative_path_components, child_is_dir
