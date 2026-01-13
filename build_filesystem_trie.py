@@ -14,6 +14,7 @@ if sys.version_info < (3,):
 
 def build_filesystem_trie(
         path,  # type: str
+        recurse_dotted=False,  # type: bool
 ):
     # type: (...) -> Tuple[COWList[str], TrieNode[str, str]]
     """
@@ -21,6 +22,7 @@ def build_filesystem_trie(
 
     Args:
         path (str): Path to either a file or directory, absolute or relative.
+        recurse_dotted (bool, default False): Whether to recurse dotted (hidden) files and directories in a directory.
 
     Returns:
         Tuple[COWList[str], TrieNode[str, str]]:
@@ -60,8 +62,9 @@ def build_filesystem_trie(
             root.is_end = False
             children = listdir(abspath)
             for child in children:
-                child_root = build_filesystem_trie_from_absolute_path_components(abspath_components.append(child))
-                root.children[child] = child_root
+                if not child.startswith('.') or recurse_dotted:
+                    child_root = build_filesystem_trie_from_absolute_path_components(abspath_components.append(child))
+                    root.children[child] = child_root
         else:
             root = TrieNode()
             root.value = name

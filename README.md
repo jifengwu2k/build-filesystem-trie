@@ -14,6 +14,12 @@ Trie Node Semantics:
 - All nodes have an `is_end` flag: `True` if the node represents a file, `False` for a directory.
 - Directory nodes have a `.children` dict mapping containing file and directory names to child nodes.
 
+## Installation
+
+```commandline
+pip install build-filesystem-trie
+```
+
 ## Example
 
 Suppose the file layout is:
@@ -36,6 +42,10 @@ prefix, trie = build_filesystem_trie('testdir')
 - `prefix` will contain the absolute path components of the directory containing `testdir`.
 - `trie` will be a TrieNode named `testdir`, with `is_end == False` and children `file1.txt` and `subdir`, and so on,
   representing the full directory structure under `testdir`.
+
+> By default, skips dotted (hidden) files and directories in a directory.
+> 
+> To recurse dotted (hidden) files and directories in a directory, pass the argument `recurse_dotted=True`
 
 Calling
 
