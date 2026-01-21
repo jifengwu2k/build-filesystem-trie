@@ -1,4 +1,6 @@
+import argparse
 import errno
+import json
 import sys
 from os import getcwd, listdir
 from os.path import exists, isdir, join, split
@@ -104,3 +106,51 @@ def iterate_relative_path_components_is_dir_tuples(
                 accumulated_relative_path_components=relative_path_components,
         ):
             yield child_relative_path_components, child_is_dir
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Print a filesystem tree, analogous to `tree` command.'
+    )
+    parser.add_argument(
+        'path',
+        nargs='?',
+        default='.',
+        help='File or directory path (absolute or relative). Defaults to current directory.'
+    )
+    parser.add_argument(
+        '--recurse-dotted', action='store_true',
+        help='Include dotted (hidden) files and directories.'
+    )
+    parser.add_argument(
+        '--yaml', action='store_true',
+        help='Print output as YAML-compatible structure.'
+    )
+    args = parser.parse_args()
+
+    try:
+        prefix, trie = build_filesystem_trie(
+            args.path,
+            recurse_dotted=args.recurse_dotted
+        )
+    except Exception as e:
+        parser.error(str(e))
+
+    if args.yaml:
+        for relative_path_components, is_dir in iterate_relative_path_components_is_dir_tuples(trie):
+            print(
+                '%s- %s%s' % (
+                    '  ' * (len(relative_path_components) - 1),
+                    json.dumps(relative_path_components[-1]),
+                    ':' if is_dir else '',
+                )
+            )
+    else:
+        for relative_path_components, is_dir in iterate_relative_path_components_is_dir_tuples(trie):
+            print(
+                '%s- %s%s' % (
+                    '  ' * (len(relative_path_components) - 1),
+                    relative_path_components[-1],
+                    '/' if is_dir else '',
+                )
+            )

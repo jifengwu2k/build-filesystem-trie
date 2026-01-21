@@ -70,6 +70,45 @@ prints:
 
 This is analogous to the output of the UNIX `tree` command.
 
+## Command-line Usage
+
+You can also print a tree from the command line:
+
+```bash
+python -m build_filesystem_trie path/to/your/file_or_directory
+```
+
+By default, it skips dotted (hidden) files and directories.  
+To include hidden files/directories, use:
+
+```bash
+python -m build_filesystem_trie path/to/dir --recurse-dotted
+```
+
+Example output:
+
+```
+- testdir/
+  - file1.txt
+  - subdir/
+    - file2.txt
+```
+
+To generate a **YAML filesystem tree**, use:
+
+```bash
+python -m build_filesystem_trie path/to/dir --yaml
+```
+
+Example output:
+
+```yaml
+- "testdir":
+  - "file1.txt"
+  - "subdir":
+    - "file2.txt"
+```
+
 ## Contributing
 
 Contributions are welcome! Please submit pull requests or open issues on the GitHub repository.
